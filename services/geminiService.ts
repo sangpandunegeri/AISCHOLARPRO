@@ -1,18 +1,28 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Project, EducationLevel } from '../types';
 
-// IMPORTANT: This key is managed externally and assumed to be available in the environment.
-// DO NOT HARDCODE or ask the user for the key.
-const API_KEY = process.env.API_KEY;
+let ai: GoogleGenAI | null = null;
 
-if (!API_KEY) {
-  // In a real app, you might want to show a more user-friendly error message
-  // or disable AI features. For this example, we'll log a warning.
-  console.warn("API_KEY environment variable not set. AI features will not work.");
+/**
+ * Lazily initializes and returns the GoogleGenAI client instance.
+ * This prevents the app from crashing on startup if the API key is not configured.
+ */
+function getAiClient(): GoogleGenAI | null {
+  if (ai) {
+    return ai;
+  }
+  
+  const API_KEY = process.env.API_KEY;
+  if (!API_KEY) {
+    console.error("API_KEY environment variable not set. AI features are disabled.");
+    alert("AI features are disabled. Please configure the API_KEY environment variable.");
+    return null;
+  }
+  
+  ai = new GoogleGenAI({ apiKey: API_KEY });
+  return ai;
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY! });
 
 function getAcademicContext(level: EducationLevel): string {
   switch (level) {
@@ -84,7 +94,8 @@ function generatePrompt(project: Project, sectionId: string): { prompt: string; 
 }
 
 export async function generateSectionContent(project: Project, sectionId:string): Promise<{text: string, groundingChunks?: any[]}> {
-    if (!API_KEY) return {text: "API Key not configured. Please set the API_KEY environment variable."};
+    const aiClient = getAiClient();
+    if (!aiClient) return {text: "API Key not configured. Please set the API_KEY environment variable."};
 
     const { prompt, useSearch } = generatePrompt(project, sectionId);
     
@@ -93,7 +104,7 @@ export async function generateSectionContent(project: Project, sectionId:string)
         config.tools = [{ googleSearch: {} }];
     }
 
-    const response = await ai.models.generateContent({
+    const response = await aiClient.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
         config: config
@@ -104,9 +115,10 @@ export async function generateSectionContent(project: Project, sectionId:string)
 }
 
 export async function proofreadText(text: string): Promise<{ correctedText: string; changes: any[] }> {
-    if (!API_KEY) return { correctedText: text, changes: [] };
+    const aiClient = getAiClient();
+    if (!aiClient) return { correctedText: text, changes: [] };
 
-    const response = await ai.models.generateContent({
+    const response = await aiClient.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: `Please act as an expert academic editor. Proofread the following Indonesian text for grammar, spelling, punctuation, and clarity. Provide the corrected text and a list of changes.
         Text to proofread: "${text}"`,
@@ -142,7 +154,8 @@ export async function proofreadText(text: string): Promise<{ correctedText: stri
 }
 
 export async function paraphraseText(project: Project, text: string, style: string): Promise<string> {
-    if (!API_KEY) return text;
+    const aiClient = getAiClient();
+    if (!aiClient) return text;
 
     const academicContext = getAcademicContext(project.educationLevel);
     const humanisticStyle = getHumanisticStylePrompt();
@@ -164,7 +177,7 @@ export async function paraphraseText(project: Project, text: string, style: stri
     Now, generate the paraphrased text in Indonesian language. Output ONLY the paraphrased text.
     `;
 
-    const response = await ai.models.generateContent({
+    const response = await aiClient.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt
     });
