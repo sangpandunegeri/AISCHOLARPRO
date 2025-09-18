@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import htmlToDocx from 'html-to-docx';
-import saveAs from 'file-saver';
+import { saveAs } from 'file-saver';
 import { Project } from '../types';
 
 // Helper to sanitize filenames
