@@ -204,8 +204,8 @@ const getChapterSpecificPrompt = (
         <h2 id="manfaat-penelitian">D. Manfaat Penelitian</h2> (uraikan poin manfaat yang sudah ada mengenai manfaat teoretis dan praktisnya).
         <h2 id="sistematika-penulisan">E. Sistematika Penulisan</h2> (uraikan poin sistematika penulisan menjadi penjelasan naratif dari setiap bab).
       `,
-    'BAB II LANDASAN TEORI': `
-        Tugas Anda adalah menulis "BAB II LANDASAN TEORI". Bab ini harus membangun fondasi teoretis yang kuat.
+    'BAB II TINJAUAN PUSTAKA': `
+        Tugas Anda adalah menulis "BAB II TINJAUAN PUSTAKA". Bab ini harus membangun fondasi teoretis yang kuat.
         Gunakan struktur tiga bagian berikut dengan penomoran yang benar dan atribut 'id' yang sesuai:
 
         <h2 id="landasan-teori">A. Landasan Teori</h2>
