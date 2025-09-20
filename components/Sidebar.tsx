@@ -125,7 +125,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, setActiveC
               <path d="M12 3.03058C6.93815 3.03058 3.56242 6.57832 2.25 10.5C3.56242 14.4217 6.93815 17.9694 12 17.9694C17.0618 17.9694 20.4376 14.4217 21.75 10.5C20.4376 6.57832 17.0618 3.03058 12 3.03058ZM12 15.75C9.06692 15.75 6.75 13.4331 6.75 10.5C6.75 7.56692 9.06692 5.25 12 5.25C14.9331 5.25 17.25 7.56692 17.25 10.5C17.25 13.4331 14.9331 15.75 12 15.75Z" />
               <path d="M12 21C9.69612 21 7.4471 20.5752 5.25 19.7259V19.7259C7.45639 20.1832 9.69837 20.4287 12 20.4287C14.3016 20.4287 16.5436 20.1832 18.75 19.7259V19.7259C16.5529 20.5752 14.3039 21 12 21Z" />
           </svg>
-          <h1 className="text-xl font-bold">AI Scholar Pro</h1>
+          <div>
+            <h1 className="text-xl font-bold">AI Scholar Pro</h1>
+            <p className="text-xs text-blue-300 -mt-1">by Sang Pandu Negeri</p>
+          </div>
         </div>
       
         <div className="flex justify-between items-center px-2 mb-2">
