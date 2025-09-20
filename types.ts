@@ -78,6 +78,7 @@ export interface ProjectData {
   appendices: AppendixItem[];
   statementPageData?: StatementPageData | null;
   approvalData?: ApprovalData | null;
+  isActivated?: boolean;
 }
 
 export interface StatisticSuggestion {

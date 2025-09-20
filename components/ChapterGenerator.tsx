@@ -9,6 +9,7 @@ import SaveIcon from './icons/SaveIcon';
 import CheckCircleIcon from './icons/CheckCircleIcon';
 import { useProject } from '../contexts/ProjectContext';
 import ResearchOutlineForm from './ResearchOutlineForm';
+import ActivationModal from './ActivationModal';
 
 const Quill = (ReactQuill as any).Quill;
 
@@ -46,6 +47,8 @@ const ChapterGenerator: React.FC<ChapterGeneratorProps> = ({ activeChapter, setA
   const [isLoading, setIsLoading] = React.useState(false);
   const [loadingMessage, setLoadingMessage] = React.useState(loadingMessages[0]);
   const [isParagraphHumanizing, setIsParagraphHumanizing] = React.useState(false);
+  const [showActivationModal, setShowActivationModal] = React.useState(false);
+
 
   // Local state for chapter-specific settings and editor content
   const [minReferences, setMinReferences] = React.useState(7);
@@ -179,73 +182,86 @@ const ChapterGenerator: React.FC<ChapterGeneratorProps> = ({ activeChapter, setA
         },
     }), [handleHumanizeParagraph]);
 
+    const proceedWithGeneration = async () => {
+        if (!projectData) return;
+
+        setIsLoading(true);
+        setGeneratedContent('');
+        try {
+            const result = await generateChapter(
+                projectData.title,
+                projectData.outline.background,
+                projectData.outline.problem,
+                projectData.outline.objective,
+                projectData.outline.benefits,
+                projectData.outline.writingSystematics,
+                projectData.outline.thinkingFramework,
+                projectData.academicLevel,
+                activeChapter,
+                isBibChapter ? 0 : minReferences,
+                isBibChapter ? 0 : minCharacters,
+                isBibChapter ? projectData.bibliography : undefined
+            );
+
+            const updatedChapters = { ...projectData.chapters, [activeChapter]: result.content };
+            
+            const existingBib = projectData.bibliography || [];
+            const newBibItems = result.references.filter(newItem => 
+                !existingBib.some(oldItem => oldItem.apa.trim() === newItem.apa.trim())
+            );
+            const updatedBibliography = newBibItems.length > 0 ? [...existingBib, ...newBibItems] : existingBib;
+
+            const newProjectData = {
+                ...projectData,
+                chapters: updatedChapters,
+                bibliography: updatedBibliography
+            };
+            onProjectUpdate(newProjectData);
+
+            const coreChapters = [
+                'BAB I PENDAHULUAN',
+                'BAB II LANDASAN TEORI',
+                'BAB III METODOLOGI PENELITIAN',
+                'BAB IV HASIL PENELITIAN DAN PEMBAHASAN',
+                'BAB V PENUTUP (KESIMPULAN DAN SARAN)',
+            ];
+
+            const allCoreChaptersDone = coreChapters.every(chapter =>
+                Object.keys(newProjectData.chapters).includes(chapter) && newProjectData.chapters[chapter]
+            );
+            
+            const isLastCoreChapterJustFinished = coreChapters.includes(activeChapter) && allCoreChaptersDone;
+
+            if (isLastCoreChapterJustFinished) {
+                setTimeout(() => {
+                    setActiveView(ActiveView.Appendices);
+                }, 1500);
+            }
+
+        } catch (error) {
+            setGeneratedContent('<p>Gagal menghasilkan konten. Silakan coba lagi.</p>');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!projectData) return;
 
-    setIsLoading(true);
-    setGeneratedContent('');
-    try {
-      const result = await generateChapter(
-        projectData.title,
-        projectData.outline.background,
-        projectData.outline.problem,
-        projectData.outline.objective,
-        projectData.outline.benefits,
-        projectData.outline.writingSystematics,
-        projectData.outline.thinkingFramework,
-        projectData.academicLevel,
-        activeChapter,
-        isBibChapter ? 0 : minReferences,
-        isBibChapter ? 0 : minCharacters,
-        isBibChapter ? projectData.bibliography : undefined
-      );
-
-      // Update chapter content
-      const updatedChapters = { ...projectData.chapters, [activeChapter]: result.content };
-      
-      // Merge bibliographies, avoiding duplicates
-      const existingBib = projectData.bibliography || [];
-      const newBibItems = result.references.filter(newItem => 
-        !existingBib.some(oldItem => oldItem.apa.trim() === newItem.apa.trim())
-      );
-      const updatedBibliography = newBibItems.length > 0 ? [...existingBib, ...newBibItems] : existingBib;
-
-      const newProjectData = {
-        ...projectData,
-        chapters: updatedChapters,
-        bibliography: updatedBibliography
-      };
-      onProjectUpdate(newProjectData);
-
-      // Define core chapters required for completion before moving to appendices
-      const coreChapters = [
-          'BAB I PENDAHULUAN',
-          'BAB II LANDASAN TEORI',
-          'BAB III METODOLOGI PENELITIAN',
-          'BAB IV HASIL PENELITIAN DAN PEMBAHASAN',
-          'BAB V PENUTUP (KESIMPULAN DAN SARAN)',
-      ];
-
-      // Check if all core chapters are now completed
-      const allCoreChaptersDone = coreChapters.every(chapter =>
-          Object.keys(newProjectData.chapters).includes(chapter) && newProjectData.chapters[chapter]
-      );
-      
-      const isLastCoreChapterJustFinished = coreChapters.includes(activeChapter) && allCoreChaptersDone;
-
-      if (isLastCoreChapterJustFinished) {
-          setTimeout(() => {
-              setActiveView(ActiveView.Appendices);
-          }, 1500);
-      }
-
-    } catch (error) {
-      setGeneratedContent('<p>Gagal menghasilkan konten. Silakan coba lagi.</p>');
-    } finally {
-      setIsLoading(false);
+    const needsActivation = activeChapter === 'BAB III METODOLOGI PENELITIAN' && !projectData.isActivated;
+    if(needsActivation) {
+        setShowActivationModal(true);
+        return;
     }
+
+    await proceedWithGeneration();
+  };
+
+  const handleActivationSuccess = () => {
+      setShowActivationModal(false);
+      proceedWithGeneration();
   };
 
   const handleSaveChanges = () => {
@@ -270,6 +286,11 @@ const ChapterGenerator: React.FC<ChapterGeneratorProps> = ({ activeChapter, setA
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
+      <ActivationModal 
+        isOpen={showActivationModal}
+        onClose={() => setShowActivationModal(false)}
+        onSuccess={handleActivationSuccess}
+      />
       <header>
         <h1 className="text-3xl font-bold text-text-primary mb-2">
             Generator Bab

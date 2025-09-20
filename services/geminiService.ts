@@ -118,6 +118,7 @@ export const initializeNewProject = async (authorInfo: AuthorInfo, title: string
             chapters: {},
             bibliography: [],
             appendices: [],
+            isActivated: false,
             statementPageData: {
                 studentName: authorInfo.studentName,
                 studentId: authorInfo.studentId,

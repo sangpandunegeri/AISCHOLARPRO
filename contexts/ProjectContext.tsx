@@ -17,6 +17,7 @@ const getInitialData = (): ProjectData | null => {
                 if (!parsedProject.approvalData) parsedProject.approvalData = null;
                 if (!parsedProject.preface) parsedProject.preface = '<p>Kata Pengantar belum dibuat.</p>';
                 if (!parsedProject.abstract) parsedProject.abstract = '<p>Abstrak belum dibuat.</p>';
+                if (parsedProject.isActivated === undefined) parsedProject.isActivated = false;
                 return parsedProject;
             }
         }
@@ -40,6 +41,7 @@ interface ProjectContextType {
     loadProject: (data: ProjectData) => void;
     isHumanizingCooldown: boolean;
     startHumanizingCooldown: () => void;
+    activateProject: (key: string) => boolean;
 }
 
 // --- Context Creation ---
@@ -51,6 +53,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [projectData, setProjectData] = useState<ProjectData | null>(getInitialData);
     const [isCreatingProject, setIsCreatingProject] = useState(false);
     const [isHumanizingCooldown, setIsHumanizingCooldown] = useState(false);
+
+    const validKeys = new Set([
+        'SPN-CgbInU4mmneUddLHFI0vtWueQTDBMZpQ', 'SPN-AHU6wZNqIQfwpoj78bgf3GrNTgKEEK1u',
+        'SPN-ImFQ7zIvJELSihGh0iQ8f0vHwrfhHpFm', 'SPN-QwhkgrbQNKrGe9G5PCADWPe8MH8YjAYl',
+        'SPN-NUkARi3j0xhGwYoEKQPGNXMfKnPJ1ofh', 'SPN-dDcVQSmvdfB6n0Kdxs7t13ZXi7H1R4rb',
+        'SPN-qvZYsh3bNrnAIxiPXTLlVrWg1vOX46bk', 'SPN-oIah1uLoT6AN9YK81ioBySoKwxamZPuL',
+        'SPN-f1izd4xwLVibzlTlhe0khY0ksHcnLO8Z', 'SPN-SBPdsBtL3d1oRUFH0EddUaOk0byX5hpo'
+    ]);
 
     useEffect(() => {
         if (projectData) {
@@ -97,6 +107,16 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }, 15000);
     }, []);
 
+    const activateProject = (key: string): boolean => {
+        if (validKeys.has(key.trim())) {
+            if (projectData) {
+                onProjectUpdate({ ...projectData, isActivated: true });
+            }
+            return true;
+        }
+        return false;
+    };
+
     const importProject = useCallback((fileContent: string) => {
          const performImport = () => {
              try {
@@ -109,6 +129,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     if (!importedData.approvalData) importedData.approvalData = null;
                     if (!importedData.preface) importedData.preface = '<p>Kata Pengantar belum dibuat.</p>';
                     if (!importedData.abstract) importedData.abstract = '<p>Abstrak belum dibuat.</p>';
+                    if (importedData.isActivated === undefined) importedData.isActivated = false;
 
                     setProjectData(importedData);
                     alert('Proyek berhasil diimpor!');
@@ -164,7 +185,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         exportProject,
         loadProject,
         isHumanizingCooldown,
-        startHumanizingCooldown
+        startHumanizingCooldown,
+        activateProject,
     };
 
     return (
